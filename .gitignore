@@ -1,0 +1,26 @@
+# Credenciales y Variables de Entorno (¡MUY IMPORTANTE!)
+.env
+
+# Jupyter Notebook y Checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+
+# Python caching y artefactos
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+ENV/
+
+# Archivos propios del Sistema Operativo
+.DS_Store
+Thumbs.db
+
+# Archivos de Big Data (Descomentar si GitHub rechaza archivos de >100MB en el futuro)
+# data/raw/*.csv
+# data/processed/*.parquet
