@@ -1,2 +1,2 @@
 # BIGDATA-STEAM-RECOMENDATION
-Project for Big Data
+En esta sección se encontrará la descripción general del proyecto.
