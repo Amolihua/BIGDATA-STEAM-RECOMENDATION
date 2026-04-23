@@ -19,22 +19,22 @@ func main() {
 	_ = godotenv.Load("../../.env")
 	dbUrl := os.Getenv("DATABASE_URL")
 	if dbUrl == "" {
-		log.Fatal("❌ DATABASE_URL no encontrada en el entorno.")
+		log.Fatal("❌ DATABASE_URL NOT FOUND.")
 	}
 
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, dbUrl)
 	if err != nil {
-		log.Fatalf("❌ Error conectando a Supabase: %v", err)
+		log.Fatalf("❌ ERROR CONNECTING TO SUPABASE: %v", err)
 	}
 	defer pool.Close()
 
 	filepath := "../../data/processed/users_cleaned.csv"
-	fmt.Printf("🚀 Iniciando ingesta CONCURRENTE de USERS: %s\n", filepath)
+	fmt.Printf("🚀 STARTING CONCURRENT INGESTION OF USERS: %s\n", filepath)
 
 	file, err := os.Open(filepath)
 	if err != nil {
-		log.Fatalf("❌ Error abriendo %s: %v", filepath, err)
+		log.Fatalf("❌ ERROR OPENING %s: %v", filepath, err)
 	}
 	defer file.Close()
 
@@ -59,7 +59,7 @@ func main() {
 					pgx.CopyFromRows(batch),
 				)
 				if err != nil {
-					log.Printf("❌ Worker %d error: %v\n", workerID, err)
+					log.Printf("❌ WORKER %d ERROR: %v\n", workerID, err)
 					continue
 				}
 				mu.Lock()
@@ -71,7 +71,9 @@ func main() {
 
 	startTime := time.Now()
 	var currentBatch [][]any
-	batchSize := 5000 // Users es más simple, batches más grandes
+	batchSize := 5000
+	rowsRead := 0
+	limit := 1000000
 
 	for {
 		record, err := reader.Read()
@@ -86,10 +88,15 @@ func main() {
 			row[i] = v
 		}
 		currentBatch = append(currentBatch, row)
+		rowsRead++
 
 		if len(currentBatch) == batchSize {
 			batches <- currentBatch
 			currentBatch = make([][]any, 0, batchSize)
+		}
+
+		if rowsRead >= limit {
+			break
 		}
 	}
 
@@ -99,5 +106,5 @@ func main() {
 
 	close(batches)
 	wg.Wait()
-	fmt.Printf("🏁 INGESTA USERS COMPLETADA: %d filas en %v\n", totalIngested, time.Since(startTime))
+	fmt.Printf("🏁 INGESTION OF USERS DONE! -> %d LINES IN %v\n", totalIngested, time.Since(startTime))
 }

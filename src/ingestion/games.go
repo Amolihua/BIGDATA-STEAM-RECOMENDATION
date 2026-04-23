@@ -19,28 +19,27 @@ func main() {
 	_ = godotenv.Load("../../.env")
 	dbUrl := os.Getenv("DATABASE_URL")
 	if dbUrl == "" {
-		log.Fatal("❌ DATABASE_URL no encontrada en el entorno.")
+		log.Fatal("❌ DATABASE_URL NOT FOUND.")
 	}
 
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, dbUrl)
 	if err != nil {
-		log.Fatalf("❌ Error conectando a Supabase: %v", err)
+		log.Fatalf("❌ ERROR CONNECTING TO SUPABASE: %v", err)
 	}
 	defer pool.Close()
 
 	filepath := "../../data/processed/games_cleaned.csv"
-	fmt.Printf("🚀 Iniciando ingesta CONCURRENTE de GAMES: %s\n", filepath)
+	fmt.Printf("🚀 STARTING CONCURRENT INGESTION OF GAMES: %s\n", filepath)
 
 	file, err := os.Open(filepath)
 	if err != nil {
-		log.Fatalf("❌ Error abriendo %s: %v", filepath, err)
+		log.Fatalf("❌ ERROR OPENING %s: %v", filepath, err)
 	}
 	defer file.Close()
 
 	reader := csv.NewReader(file)
-	_, _ = reader.Read() // saltar cabecera
-
+	_, _ = reader.Read()
 	batches := make(chan [][]any, 50)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
@@ -60,7 +59,7 @@ func main() {
 					pgx.CopyFromRows(batch),
 				)
 				if err != nil {
-					log.Printf("❌ Worker %d error: %v\n", workerID, err)
+					log.Printf("❌ WORKER %d ERROR: %v\n", workerID, err)
 					continue
 				}
 				mu.Lock()
@@ -82,7 +81,7 @@ func main() {
 		if err != nil {
 			continue
 		}
-		
+
 		row := make([]any, len(record))
 		for i, v := range record {
 			row[i] = v
@@ -101,5 +100,5 @@ func main() {
 
 	close(batches)
 	wg.Wait()
-	fmt.Printf("🏁 INGESTA GAMES COMPLETADA: %d filas en %v\n", totalIngested, time.Since(startTime))
+	fmt.Printf("🏁 INGESTION OF GAMES DONE! -> %d LINES IN %v\n", totalIngested, time.Since(startTime))
 }
