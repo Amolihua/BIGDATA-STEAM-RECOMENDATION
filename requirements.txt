@@ -1,0 +1,7 @@
+pyarrow
+supabase
+python-dotenv
+SQLAlchemy
+psycopg2-binary
+pandas
+kagglehub

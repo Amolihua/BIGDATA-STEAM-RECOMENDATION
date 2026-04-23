@@ -1,8 +1,4 @@
-# BIGDATA-STEAM-RECOMENDATION
-En esta sección se encontrará las instrucciones del proyecto.
-
 # Semester Group Assignment Brief
-
 
 ## Title
 
