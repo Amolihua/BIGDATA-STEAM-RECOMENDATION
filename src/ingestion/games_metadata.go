@@ -25,28 +25,27 @@ func main() {
 	_ = godotenv.Load("../../.env")
 	dbUrl := os.Getenv("DATABASE_URL")
 	if dbUrl == "" {
-		log.Fatal("❌ DATABASE_URL no encontrada en el entorno.")
+		log.Fatal("❌ DATABASE_URL NOT FOUND.")
 	}
 
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, dbUrl)
 	if err != nil {
-		log.Fatalf("❌ Error conectando a Supabase: %v", err)
+		log.Fatalf("❌ ERROR CONNECTING TO SUPABASE: %v", err)
 	}
 	defer pool.Close()
 
 	filepath := "../../data/processed/games_metadata_cleaned.json"
-	fmt.Printf("🚀 Iniciando ingesta CONCURRENTE de METADATA: %s\n", filepath)
+	fmt.Printf("🚀 STARTING CONCURRENT INGESTION OF METADATA: %s\n", filepath)
 
 	file, err := os.Open(filepath)
 	if err != nil {
-		log.Fatalf("❌ Error abriendo %s: %v", filepath, err)
+		log.Fatalf("❌ ERROR OPENING %s: %v", filepath, err)
 	}
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	
-	// Aumentar el tamaño del buffer porque los JSONL pueden tener líneas súper largas (descripciones gigantes)
+
 	buf := make([]byte, 0, 64*1024)
 	scanner.Buffer(buf, 1024*1024)
 
@@ -68,7 +67,7 @@ func main() {
 					pgx.CopyFromRows(batch),
 				)
 				if err != nil {
-					log.Printf("❌ Worker %d error: %v\n", workerID, err)
+					log.Printf("❌ WORKER %d ERROR: %v\n", workerID, err)
 					continue
 				}
 				mu.Lock()
@@ -88,7 +87,7 @@ func main() {
 			continue
 		}
 		tagsJson, _ := json.Marshal(md.Tags)
-		
+
 		currentBatch = append(currentBatch, []any{md.AppID, md.Description, string(tagsJson)})
 
 		if len(currentBatch) == batchSize {
@@ -103,5 +102,5 @@ func main() {
 
 	close(batches)
 	wg.Wait()
-	fmt.Printf("🏁 INGESTA METADATA COMPLETADA: %d filas en %v\n", totalIngested, time.Since(startTime))
+	fmt.Printf("🏁 INGESTION OF METADATA DONE! -> %d LINES IN %v\n", totalIngested, time.Since(startTime))
 }

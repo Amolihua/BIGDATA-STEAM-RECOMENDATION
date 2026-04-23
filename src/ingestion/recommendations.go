@@ -58,7 +58,6 @@ func main() {
 	totalIngested := 0
 	numWorkers := 8
 
-	// Lanzar workers concurrentes
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
 		go func(workerID int) {
@@ -83,17 +82,24 @@ func main() {
 
 	startTime := time.Now()
 	recs := make([]Recommendation, 10000)
+	rowsRead := 0
+	limit := 2000000
+
 	for {
 		n, err := reader.Read(recs)
 		if n > 0 {
+			if rowsRead+n > limit {
+				n = limit - rowsRead
+			}
 			batch := make([][]any, n)
 			for i := 0; i < n; i++ {
 				r := recs[i]
 				batch[i] = []any{r.AppID, r.Helpful, r.Funny, r.Date, r.IsRecommended, r.Hours, r.UserID, r.ReviewID}
 			}
 			batches <- batch
+			rowsRead += n
 		}
-		if err == io.EOF {
+		if err == io.EOF || rowsRead >= limit {
 			break
 		}
 		if err != nil {
