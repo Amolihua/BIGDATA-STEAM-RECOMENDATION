@@ -33,18 +33,17 @@ def run_command(command, cwd=None):
 
 def main():
     print("STARTING STEAM BIG DATA END-TO-END MASTER PIPELINE")
-    print("Complete Orchestration: Extraction -> Cleaning -> Schema -> Ingestion\n")
+    print("Complete Orchestration: Extraction -> Cleaning -> Schema -> Ingestion -> Representation\n")
     
 
     # --- PHASE 1: Raw Data Extraction ---
-    # Using jupyter nbconvert to run .ipynb notebooks from terminal without GUI
-    run_command("jupyter nbconvert --to notebook --execute download_dataset.ipynb", cwd="notebooks")
+    run_command("python -m nbconvert --to notebook --execute download_dataset.ipynb", cwd="notebooks")
 
     # --- PHASE 2: Transformation and Cleaning (EDA) ---
-    run_command("jupyter nbconvert --to notebook --execute eda_games.ipynb", cwd="notebooks")
-    run_command("jupyter nbconvert --to notebook --execute eda_metadata.ipynb", cwd="notebooks")
-    run_command("jupyter nbconvert --to notebook --execute eda_users.ipynb", cwd="notebooks")
-    run_command("jupyter nbconvert --to notebook --execute eda_recommendations.ipynb", cwd="notebooks")
+    run_command("python -m nbconvert --to notebook --execute eda_games.ipynb", cwd="notebooks")
+    run_command("python -m nbconvert --to notebook --execute eda_metadata.ipynb", cwd="notebooks")
+    run_command("python -m nbconvert --to notebook --execute eda_users.ipynb", cwd="notebooks")
+    run_command("python -m nbconvert --to notebook --execute eda_recommendations.ipynb", cwd="notebooks")
 
     # --- PHASE 3: Cloud Ingestion (Independent Nodes) ---
     run_command("go run games.go", cwd="src/ingestion")
@@ -54,6 +53,13 @@ def main():
     run_command("go run games_metadata.go", cwd="src/ingestion")
     run_command("go run recommendations.go", cwd="src/ingestion")
     
+    # --- PHASE 5: Data Representation (Feature & Interaction Layers) ---
+    print("\n--- Constructing Representation Layers ---")
+    run_command("python src/features/feature_engineering.py")
+    run_command("python src/features/interaction_matrix.py")
+
+    # --- PHASE 6: Dimensionality Reduction and Visualization ---
+    run_command("python -m nbconvert --to notebook --execute dimensionality_analysis.ipynb", cwd="notebooks")
 
     print("\n🎉 PIPELINE EXECUTED AND COMPLETED SUCCESSFULLY! 🎉")
 
