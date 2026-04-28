@@ -63,7 +63,7 @@ def main():
     run_command("python src/features/nlp_analysis.py")
 
     # --- PHASE 7: Dimensionality Reduction & Clustering ---
-    # print("\n--- Phase 7: Dimensionality Analysis ---")
+    print("\n--- Phase 7: Dimensionality Analysis ---")
     #run_command("python -m nbconvert --to notebook --execute dimensionality_analysis.ipynb", cwd="notebooks")
 
     print("\nPIPELINE READY! (Some phases commented out to save resources)")
