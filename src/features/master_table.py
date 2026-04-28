@@ -1,60 +1,62 @@
-import pandas as pd
+import polars as pl
 import json
 import os
-import numpy as np
 
 def load_data():
-    print("Loading datasets...")
-    games_df = pd.read_csv('data/processed/games_cleaned.csv')
+    print("Loading datasets with Polars...")
+    # Load Games
+    games_df = pl.read_csv('data/processed/games_cleaned.csv')
     
-
-    metadata = []
-    with open('data/processed/games_metadata_cleaned.json', 'r') as f:
-        for line in f:
-            metadata.append(json.loads(line))
-    metadata_df = pd.DataFrame(metadata)
+    # Load Metadata (JSON Lines) - Polars can read ndjson directly
+    metadata_df = pl.read_ndjson('data/processed/games_metadata_cleaned.json')
     
-    
-    recs_df = pd.read_parquet('data/processed/recommendations_cleaned.parquet', 
+    # Load Recommendations (Parquet)
+    recs_df = pl.read_parquet('data/processed/recommendations_cleaned.parquet', 
                              columns=['user_id', 'app_id', 'hours', 'is_recommended'])
     
-    
-    users_df = pd.read_csv('data/processed/users_cleaned.csv', usecols=['user_id', 'products'])
+    # Load Users
+    users_df = pl.read_csv('data/processed/users_cleaned.csv', has_header=True).select(['user_id', 'products'])
     
     return games_df, metadata_df, recs_df, users_df
 
 def engineer_features(games_df, metadata_df, recs_df, users_df):
-    print("Engineering aggregate features...")
+    print("Engineering aggregate features with Polars...")
     
-    agg_recs = recs_df.groupby('app_id').agg(
-        hours_mean=('hours', 'mean'),
-        hours_median=('hours', 'median'),
-        hours_std=('hours', 'std'),
-        rec_ratio=('is_recommended', 'mean'),
-        review_count=('app_id', 'count')
-    ).reset_index()
+    # 1. Recommendation Aggregations
+    agg_recs = recs_df.group_by('app_id').agg([
+        pl.col('hours').mean().alias('hours_mean'),
+        pl.col('hours').median().alias('hours_median'),
+        pl.col('hours').std().alias('hours_std'),
+        pl.col('is_recommended').mean().alias('rec_ratio'),
+        pl.col('app_id').count().alias('review_count')
+    ])
     
+    # 2. User Profile Aggregations (Fan vs Hater)
+    # Join recs with users
+    recs_with_users = recs_df.join(users_df, on='user_id', how='inner')
     
-    recs_with_users = pd.merge(recs_df, users_df, on='user_id', how='inner')
+    # Fan stats
+    fan_stats = (recs_with_users
+                 .filter(pl.col('is_recommended') == True)
+                 .group_by('app_id')
+                 .agg(pl.col('products').mean().alias('fan_avg_products')))
     
-
-    fan_stats = recs_with_users[recs_with_users['is_recommended'] == True].groupby('app_id')['products'].mean().reset_index()
-    fan_stats.columns = ['app_id', 'fan_avg_products']
+    # Hater stats
+    hater_stats = (recs_with_users
+                   .filter(pl.col('is_recommended') == False)
+                   .group_by('app_id')
+                   .agg(pl.col('products').mean().alias('hater_avg_products')))
     
-
-    hater_stats = recs_with_users[recs_with_users['is_recommended'] == False].groupby('app_id')['products'].mean().reset_index()
-    hater_stats.columns = ['app_id', 'hater_avg_products']
-    
-  
+    # 3. Master Merge
     print("Consolidating Master Table...")
-    master_df = pd.merge(games_df, metadata_df, on='app_id', how='inner')
-    master_df = pd.merge(master_df, agg_recs, on='app_id', how='left')
-    master_df = pd.merge(master_df, fan_stats, on='app_id', how='left')
-    master_df = pd.merge(master_df, hater_stats, on='app_id', how='left')
+    master_df = (games_df
+                 .join(metadata_df, on='app_id', how='inner')
+                 .join(agg_recs, on='app_id', how='left')
+                 .join(fan_stats, on='app_id', how='left')
+                 .join(hater_stats, on='app_id', how='left'))
     
- 
-    fill_cols = ['hours_mean', 'hours_median', 'hours_std', 'rec_ratio', 'review_count', 'fan_avg_products', 'hater_avg_products']
-    master_df[fill_cols] = master_df[fill_cols].fillna(0)
+    # Fill nulls with 0
+    master_df = master_df.fill_null(0)
     
     return master_df
 
@@ -63,7 +65,7 @@ def main():
     master_df = engineer_features(games_df, metadata_df, recs_df, users_df)
     
     output_path = 'data/processed/master_games_ml.parquet'
-    master_df.to_parquet(output_path, index=False)
+    master_df.write_parquet(output_path)
     print(f"Master Table created successfully at: {output_path}")
     print(f"Total columns: {len(master_df.columns)}")
     print(f"Total rows (games): {len(master_df)}")
