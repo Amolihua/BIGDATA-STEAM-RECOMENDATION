@@ -33,7 +33,7 @@ def run_command(command, cwd=None):
 
 def main():
     print("STARTING STEAM BIG DATA END-TO-END MASTER PIPELINE")
-    print("Complete Orchestration: Extraction -> Cleaning -> Schema -> Ingestion -> Representation\n")
+    print("Complete Orchestration: Extraction -> Cleaning -> Schema -> Ingestion\n")
     
 
     # --- PHASE 1: Raw Data Extraction ---
@@ -53,13 +53,6 @@ def main():
     run_command("go run games_metadata.go", cwd="src/ingestion")
     run_command("go run recommendations.go", cwd="src/ingestion")
     
-    # --- PHASE 5: Data Representation (Feature & Interaction Layers) ---
-    print("\n--- Constructing Representation Layers ---")
-    run_command("python src/features/feature_engineering.py")
-    run_command("python src/features/interaction_matrix.py")
-
-    # --- PHASE 6: Dimensionality Reduction and Visualization ---
-    run_command("python -m nbconvert --to notebook --execute dimensionality_analysis.ipynb", cwd="notebooks")
 
     print("\n🎉 PIPELINE EXECUTED AND COMPLETED SUCCESSFULLY! 🎉")
 
