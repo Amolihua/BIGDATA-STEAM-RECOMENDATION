@@ -33,7 +33,7 @@ def run_command(command, cwd=None):
 
 def main():
     print("STARTING STEAM BIG DATA END-TO-END MASTER PIPELINE")
-    print("Complete Orchestration: Extraction -> Cleaning -> Schema -> Ingestion\n")
+    print("Strategy: PIVOT - Game-Centric Representation for Bridge Titles\n")
     
 
     # --- PHASE 1: Raw Data Extraction ---
@@ -46,15 +46,27 @@ def main():
     run_command("python -m nbconvert --to notebook --execute eda_recommendations.ipynb", cwd="notebooks")
 
     # --- PHASE 3: Cloud Ingestion (Independent Nodes) ---
-    run_command("go run games.go", cwd="src/ingestion")
-    run_command("go run users.go", cwd="src/ingestion")
+    # WARNING: These scripts push data to Supabase. Check your 500MB limit.
+    # run_command("go run games.go", cwd="src/ingestion")
+    # run_command("go run users.go", cwd="src/ingestion")
     
     # --- PHASE 4: Cloud Ingestion (Dependent Nodes) ---
-    run_command("go run games_metadata.go", cwd="src/ingestion")
-    run_command("go run recommendations.go", cwd="src/ingestion")
+    # run_command("go run games_metadata.go", cwd="src/ingestion")
+    # run_command("go run recommendations.go", cwd="src/ingestion")
     
+    # --- PHASE 5: Master Table Denormalization (PIVOT) ---
+    print("\n--- Phase 5: Building Master Table ---")
+    run_command("python src/features/master_table.py")
 
-    print("\n🎉 PIPELINE EXECUTED AND COMPLETED SUCCESSFULLY! 🎉")
+    # --- PHASE 6: NLP Enrichment (Sentiment & Embeddings) ---
+    print("\n--- Phase 6: NLP Analysis (HuggingFace) ---")
+    # run_command("python src/features/nlp_analysis.py")
+
+    # --- PHASE 7: Dimensionality Reduction & Clustering ---
+    print("\n--- Phase 7: Dimensionality Analysis ---")
+    # run_command("python -m nbconvert --to notebook --execute dimensionality_analysis.ipynb", cwd="notebooks")
+
+    print("\n🎉 PIPELINE READY! (Some phases commented out to save resources) 🎉")
 
 if __name__ == "__main__":
     main()

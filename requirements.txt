@@ -5,3 +5,9 @@ SQLAlchemy
 psycopg2-binary
 pandas
 kagglehub
+transformers
+torch
+sentence-transformers
+scikit-learn
+tqdm
+numpy
