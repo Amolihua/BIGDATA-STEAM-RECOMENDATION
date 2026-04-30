@@ -4,9 +4,9 @@ import time
 
 def run_command(command, cwd=None):
     print(f"\n{'='*60}")
-    print(f"🚀 Executing: {command}")
+    print(f"Executing: {command}")
     if cwd:
-        print(f"📂 Directory: {cwd}")
+        print(f"Directory: {cwd}")
     print(f"{'='*60}\n")
     
     start_time = time.time()
@@ -21,41 +21,52 @@ def run_command(command, cwd=None):
         process.communicate()
         
         if process.returncode != 0:
-            print(f"\n❌ Critical error executing: {command}")
+            print(f"\nCritical error executing: {command}")
             sys.exit(process.returncode)
             
         elapsed = time.time() - start_time
-        print(f"\n✅ Completed successfully in {elapsed:.2f} seconds.")
+        print(f"\nCompleted successfully in {elapsed:.2f} seconds.")
         
     except Exception as e:
-        print(f"\n❌ Exception while attempting to execute: {e}")
+        print(f"\nException while attempting to execute: {e}")
         sys.exit(1)
 
 def main():
     print("STARTING STEAM BIG DATA END-TO-END MASTER PIPELINE")
-    print("Complete Orchestration: Extraction -> Cleaning -> Schema -> Ingestion\n")
+    print("Strategy: PIVOT - Game-Centric Representation for Bridge Titles\n")
     
 
     # --- PHASE 1: Raw Data Extraction ---
-    # Using jupyter nbconvert to run .ipynb notebooks from terminal without GUI
-    run_command("jupyter nbconvert --to notebook --execute download_dataset.ipynb", cwd="notebooks")
+    #run_command("python -m nbconvert --to notebook --execute download_dataset.ipynb", cwd="notebooks")
 
     # --- PHASE 2: Transformation and Cleaning (EDA) ---
-    run_command("jupyter nbconvert --to notebook --execute eda_games.ipynb", cwd="notebooks")
-    run_command("jupyter nbconvert --to notebook --execute eda_metadata.ipynb", cwd="notebooks")
-    run_command("jupyter nbconvert --to notebook --execute eda_users.ipynb", cwd="notebooks")
-    run_command("jupyter nbconvert --to notebook --execute eda_recommendations.ipynb", cwd="notebooks")
+    #run_command("python -m nbconvert --to notebook --execute eda_games.ipynb", cwd="notebooks")
+    #run_command("python -m nbconvert --to notebook --execute eda_metadata.ipynb", cwd="notebooks")
+    #run_command("python -m nbconvert --to notebook --execute eda_users.ipynb", cwd="notebooks")
+    #run_command("python -m nbconvert --to notebook --execute eda_recommendations.ipynb", cwd="notebooks")
 
     # --- PHASE 3: Cloud Ingestion (Independent Nodes) ---
-    run_command("go run games.go", cwd="src/ingestion")
-    run_command("go run users.go", cwd="src/ingestion")
+    # WARNING: These scripts push data to Supabase. Check your 500MB limit.
+    # run_command("go run games.go", cwd="src/ingestion")
+    # run_command("go run users.go", cwd="src/ingestion")
     
     # --- PHASE 4: Cloud Ingestion (Dependent Nodes) ---
-    run_command("go run games_metadata.go", cwd="src/ingestion")
-    run_command("go run recommendations.go", cwd="src/ingestion")
+    # run_command("go run games_metadata.go", cwd="src/ingestion")
+    # run_command("go run recommendations.go", cwd="src/ingestion")
     
+    # --- PHASE 5: Master Table Denormalization (PIVOT) ---
+    print("\n--- Phase 5: Building Master Table ---")
+    run_command("python src/features/master_table.py")
 
-    print("\n🎉 PIPELINE EXECUTED AND COMPLETED SUCCESSFULLY! 🎉")
+    # --- PHASE 6: NLP Enrichment (Sentiment & Embeddings) ---
+    print("\n--- Phase 6: NLP Analysis (GPU Accelerated with CUDA) ---")
+    run_command("python src/features/nlp_analysis.py")
+
+    # --- PHASE 7: Dimensionality Reduction & Clustering ---
+    print("\n--- Phase 7: Dimensionality Analysis ---")
+    #run_command("python -m nbconvert --to notebook --execute dimensionality_analysis.ipynb", cwd="notebooks")
+
+    print("\nPIPELINE READY! (Some phases commented out to save resources)")
 
 if __name__ == "__main__":
     main()
